@@ -20,7 +20,8 @@ const {
   printTestPage3,
   printGuideLines,
   printCharLine,
-  printSaleDetailsToNetworkPrinter
+  printSaleDetailsToNetworkPrinter,
+  printLegalizedTicket
 } = controller;
 
 router.get('/print-guide-lines', printGuideLines);
@@ -41,6 +42,7 @@ router.post('/printTicketKitchen', printTicketKitchen);
 router.post('/printTicketPreAccount', printTicketPreAccount);
 router.post('/printPackOff', printPackOff);
 
-router.post('/print-sale-details-to-network-printer', printSaleDetailsToNetworkPrinter)
+router.post('/print-sale-details-to-network-printer', printSaleDetailsToNetworkPrinter);
+router.post('/legalized-ticket', printLegalizedTicket);
 
 export default router;

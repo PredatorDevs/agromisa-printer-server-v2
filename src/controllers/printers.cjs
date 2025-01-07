@@ -1930,4 +1930,103 @@ controller.printSaleDetailsToNetworkPrinter = (req, res) => {
   }
 }
 
+controller.printLegalizedTicket = (req, res) => {
+  try {
+    const { invoiceHeaderData, invoiceBodyData } = req.body;
+
+    let encoder = new ReceiptPrinterEncoder({
+      language: 'esc-pos',
+      columns: 42,
+      feedBeforeCut: 0,
+      newline: '\n'
+    });
+
+    // let commands = encoder.initialize()
+    encoder.initialize()
+    // .raw([0x1B, 0x3D, 0x01])
+    .raw([0x1B, 0x63, 0x30, 0x03])
+    .line('')
+    .align('center')
+    .line(`${invoiceHeaderData.ownerName}`)
+    .line(`${invoiceHeaderData.ownerTradename}`)
+    // .line(`${invoiceHeaderData.locationName}`)
+    // .line('')
+    .line(`${invoiceHeaderData.locationAddress}`)
+    // .line('')
+    .line(`${String(`NRC: ${invoiceHeaderData.ownerNrc}`.padEnd(16))} ${String(`NIT: ${invoiceHeaderData.ownerNit}`.padEnd(22))}`)
+    .align('left')
+    .line(`RES: ${invoiceHeaderData.ticketResolutionNumber}`)
+    .line(`FECHA RES: ${invoiceHeaderData.ticketResolutionDate}`)
+    .line(`SERIE AUT: Del ${invoiceHeaderData.ticketResolutionAuthorizedSerieFrom} Al ${invoiceHeaderData.ticketResolutionAuthorizedSerieTo}`)
+    .align('center')
+    .line(`${invoiceHeaderData.cashierName}`)
+    .line(`TICKET N° ${String(invoiceHeaderData.docNumber).padStart(6, '0')}`)
+    // .line('')
+    .align('left')
+    .line(`${String('Cant').padEnd(7)} ${String('Descripcion').padEnd(21)} ${String('Precio').padStart(9)}`)
+    .line('----------------------------------------');
+
+    for (let i = 0; i < invoiceBodyData.length; i++) {
+      encoder.line(`${String(Number(invoiceBodyData[i].quantity).toFixed(2)).padEnd(7)} ${String(invoiceBodyData[i].productName).substring(0, 21).padEnd(21)} ${String(Number(invoiceBodyData[i].subTotal).toFixed(2)).padStart(9)}`);
+    }
+
+    // encoder.line(`${String('Cant').padEnd(9)} ${String('Descripcion').padEnd(19)} ${String('Precio').padStart(9)}`)
+    // encoder.line(`${String('10.00').padEnd(9)} ${String('FRIJOLES LA CHULA').padEnd(19)} ${String('16.50').padStart(9)}`)
+    encoder.line('----------------------------------------')
+    .align('left')
+    .line(`VENDEDOR: ${invoiceHeaderData.sellerPINCodeFullName}`.padEnd(39))
+    .line(`CAJERO: ${invoiceHeaderData.userPINCodeFullName}`.padEnd(39))
+    .line(`${invoiceHeaderData.docDatetimeForTicket}`.padEnd(39))
+    .line('')
+    .align('center')
+    .line('No se aceptan cambios ni devoluciones sin presentar este ticket')
+    .line('')
+    .line('*-*-* GRACIAS POR PREFERIRNOS *-*-*')
+    .line('')
+    .line('')
+    .line('')
+    .line('')
+    .line('')
+    .line('')
+    .raw(escposcommands.alternativeCut)
+    .line('')
+    .line('')
+    .line('');
+    // .encode();
+
+    let commands = encoder.encode();
+
+    const pcName = 'Luciernaga';
+    const printerName = 'Epson TM-U950 Receipt';
+
+    const printerPath = `\\\\${pcName}\\${printerName}`;
+
+    const tempFile = 'comandos_print.bin';
+    // const tempFile = 'temp_comandos.txt';
+    // const cutCommand = new Uint8Array([0x1B, 0x69]);
+    fs.writeFileSync(tempFile, Buffer.from(commands), 'binary');
+    // fs.writeFileSync(tempFile, `${commands}`, 'binary');
+
+    const command = `copy /b ${tempFile} "${printerPath}"`;
+
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.log(`Error al imprimir ${error.message}`);
+        return;
+      }
+      if (stderr) {
+        console.log(`Error ${stderr}`);
+        return;
+      }
+      console.log('Impresor completa');
+      return;
+    });
+
+    res.json({ data: "Printer connection success!" });
+  } catch(err) {
+    console.log(err);
+    res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
+  }
+}
+
 module.exports = { controller };
