@@ -21,7 +21,9 @@ const {
   printGuideLines,
   printCharLine,
   printSaleDetailsToNetworkPrinter,
-  printLegalizedTicket
+  printLegalizedTicket,
+  printSettlementXTicket,
+  printSettlementZTicket
 } = controller;
 
 router.get('/print-guide-lines', printGuideLines);
@@ -44,5 +46,7 @@ router.post('/printPackOff', printPackOff);
 
 router.post('/print-sale-details-to-network-printer', printSaleDetailsToNetworkPrinter);
 router.post('/legalized-ticket', printLegalizedTicket);
+router.post('/settlement-x-ticket', printSettlementXTicket);
+router.post('/settlement-z-ticket', printSettlementZTicket);
 
 export default router;

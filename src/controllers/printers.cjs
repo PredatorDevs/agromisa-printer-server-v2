@@ -1974,6 +1974,11 @@ controller.printLegalizedTicket = (req, res) => {
     // encoder.line(`${String('10.00').padEnd(9)} ${String('FRIJOLES LA CHULA').padEnd(19)} ${String('16.50').padStart(9)}`)
     encoder.line('----------------------------------------')
     .align('left')
+    .line(`${String('TOTAL GRAVADO:').padEnd(20)}${String(Number(invoiceHeaderData.taxableSubTotal || 0).toFixed(2)).padStart(18)}`)
+    .line(`${String('TOTAL EXENTO:').padEnd(20)}${String(Number(invoiceHeaderData.noTaxableSubTotal || 0).toFixed(2)).padStart(18)}`)
+    .line(`${String('TOTAL NO SUJETO:').padEnd(20)}${String(Number(0).toFixed(2)).padStart(18)}`)
+    .line(`${String('TOTAL VENTA:').padEnd(20)}${String(Number(invoiceHeaderData.total || 0).toFixed(2)).padStart(18)}`)
+    .line('')
     .line(`VENDEDOR: ${invoiceHeaderData.sellerPINCodeFullName}`.padEnd(39))
     .line(`CAJERO: ${invoiceHeaderData.userPINCodeFullName}`.padEnd(39))
     .line(`${invoiceHeaderData.docDatetimeForTicket}`.padEnd(39))
@@ -2028,5 +2033,349 @@ controller.printLegalizedTicket = (req, res) => {
     res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
   }
 }
+
+controller.printSettlementXTicket = (req, res) => {
+  try {
+    const { settlementData } = req.body;
+
+    const shiftcutData = settlementData[0];
+
+    const {
+      locationOwnerTradename,
+      locationOwnerName,
+      locationOwnerActivityCode,
+      locationOwnerActivityDescription,
+      locationOwnerNit,
+      locationOwnerNrc,
+      shiftcutDatetime,
+      shiftcutDatetimeFormatted,
+      openedByFullname,
+      closedByFullname,
+      cashierName,
+      shiftcutNumber
+    } = shiftcutData[0];
+
+    const ticketsXData = settlementData[1];
+
+    const {
+      label: ticketLabel,
+      numberOfTransactions: ticketNumberOfTransactions,
+      initialDocNumber: ticketInitialDocNumber,
+      finalDocNumber: ticketFinalDocNumber,
+      taxableTotal: ticketTaxableTotal,
+      noTaxableTotal: ticketNoTaxableTotal,
+      noSubjectTotal: ticketNoSubjectTotal,
+      total: ticketTotal
+    } = ticketsXData[0];
+
+    const cfXData = settlementData[2];
+
+    const {
+      label: cfLabel,
+      numberOfTransactions: cfNumberOfTransactions,
+      initialDocNumber: cfInitialDocNumber,
+      finalDocNumber: cfFinalDocNumber,
+      taxableTotal: cfTaxableTotal,
+      noTaxableTotal: cfNoTaxableTotal,
+      noSubjectTotal: cfNoSubjectTotal,
+      total: cfTotal
+    } = cfXData[0];
+
+    const ccfXData = settlementData[3];
+
+    const {
+      label: ccfLabel,
+      numberOfTransactions: ccfNumberOfTransactions,
+      initialDocNumber: ccfInitialDocNumber,
+      finalDocNumber: ccfFinalDocNumber,
+      taxableTotal: ccfTaxableTotal,
+      noTaxableTotal: ccfNoTaxableTotal,
+      noSubjectTotal: ccfNoSubjectTotal,
+      total: ccfTotal
+    } = ccfXData[0];
+    
+    let encoder = new ReceiptPrinterEncoder({
+      language: 'esc-pos',
+      columns: 42,
+      feedBeforeCut: 0,
+      newline: '\n'
+    });
+
+    // let commands = encoder.initialize()
+    encoder.initialize()
+    // .raw([0x1B, 0x3D, 0x01])
+    .raw([0x1B, 0x63, 0x30, 0x03])
+    .line('')
+    .align('center')
+    .line(`${locationOwnerName}`)
+    .line(`${locationOwnerTradename}`)
+    .line(`${locationOwnerActivityDescription}`)
+    .line('')
+    .align('left')
+    .line(`${String('NIT:').padEnd(12)}${String(locationOwnerNit).padStart(26)}`)
+    .line(`${String('NRC:').padEnd(12)}${String(locationOwnerNrc).padStart(26)}`)
+    .line(`${String('Caja:').padEnd(12)}${String(cashierName).padStart(26)}`)
+    .line(`${String('Turno:').padEnd(12)}${String(shiftcutNumber).padStart(26)}`)
+    .line(`${String('Fecha:').padEnd(12)}${String(shiftcutDatetimeFormatted).padStart(26)}`)
+    .line(`${String('Apertura:').padEnd(12)}${String(openedByFullname).padStart(26)}`)
+    .line(`${String('Cierra:').padEnd(12)}${String(closedByFullname).padStart(26)}`)
+    .align('center')
+    .line('TICKET X')
+    .align('left')
+    .line('----------------------------------------')
+    .line(`${String(ticketLabel).padEnd(18)}${String('').padStart(20)}`)
+    .line(`${String('Venta Gravada:').padEnd(18)}${String(Number(ticketTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta Exenta:').padEnd(18)}${String(Number(ticketNoTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta No Sujeta:').padEnd(18)}${String(Number(ticketNoSubjectTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Total:').padEnd(18)}${String(Number(ticketTotal || 0).toFixed(2)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(cfLabel).padEnd(18)}${String('').padStart(20)}`)
+    .line(`${String('Venta Gravada:').padEnd(18)}${String(Number(cfTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta Exenta:').padEnd(18)}${String(Number(cfNoTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta No Sujeta:').padEnd(18)}${String(Number(cfNoSubjectTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Total:').padEnd(18)}${String(Number(cfTotal || 0).toFixed(2)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(ccfLabel).padEnd(18)}${String('').padStart(20)}`)
+    .line(`${String('Venta Gravada:').padEnd(18)}${String(Number(ccfTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta Exenta:').padEnd(18)}${String(Number(ccfNoTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta No Sujeta:').padEnd(18)}${String(Number(ccfNoSubjectTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Total:').padEnd(18)}${String(Number(ccfTotal || 0).toFixed(2)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String('TOTAL VENTAS:').padEnd(18)}${String(Number((+ticketTotal || 0) + (+cfTotal || 0) + (+ccfTotal || 0)).toFixed(2)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String('Transacciones:').padEnd(18)}${String(Number((ticketNumberOfTransactions || 0) + (cfNumberOfTransactions || 0) + (ccfNumberOfTransactions || 0)).toFixed(0)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(ticketLabel).padEnd(18)}${String(Number(ticketNumberOfTransactions).toFixed(0)).padStart(20)}`)
+    .line(`${String('Inicial').padEnd(18)}${String(Number(ticketInitialDocNumber).toFixed(0)).padStart(20)}`)
+    .line(`${String('Final').padEnd(18)}${String(Number(ticketFinalDocNumber).toFixed(0)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(cfLabel).padEnd(18)}${String(Number(cfNumberOfTransactions).toFixed(0)).padStart(20)}`)
+    .line(`${String('Inicial').padEnd(18)}${String(Number(cfInitialDocNumber).toFixed(0)).padStart(20)}`)
+    .line(`${String('Final').padEnd(18)}${String(Number(cfFinalDocNumber).toFixed(0)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(ccfLabel).padEnd(18)}${String(Number(ccfNumberOfTransactions).toFixed(0)).padStart(20)}`)
+    .line(`${String('Inicial').padEnd(18)}${String(Number(ccfInitialDocNumber).toFixed(0)).padStart(20)}`)
+    .line(`${String('Final').padEnd(18)}${String(Number(ccfFinalDocNumber).toFixed(0)).padStart(20)}`)
+    .line('')
+    .line('')
+    .line('')
+    .line('')
+    .line('')
+    .line('')
+    .raw(escposcommands.alternativeCut)
+    .line('')
+    .line('')
+    .line('');
+    // .encode();
+
+    let commands = encoder.encode();
+
+    const pcName = 'Luciernaga';
+    const printerName = 'Epson TM-U950 Receipt';
+
+    const printerPath = `\\\\${pcName}\\${printerName}`;
+
+    const tempFile = 'comandos_print.bin';
+    // const tempFile = 'temp_comandos.txt';
+    // const cutCommand = new Uint8Array([0x1B, 0x69]);
+    fs.writeFileSync(tempFile, Buffer.from(commands), 'binary');
+    // fs.writeFileSync(tempFile, `${commands}`, 'binary');
+
+    const command = `copy /b ${tempFile} "${printerPath}"`;
+
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.log(`Error al imprimir ${error.message}`);
+        return;
+      }
+      if (stderr) {
+        console.log(`Error ${stderr}`);
+        return;
+      }
+      console.log('Impresor completa');
+      return;
+    });
+
+    res.json({ data: "Printer connection success!" });
+  } catch(err) {
+    console.log(err);
+    res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
+  }
+}
+
+controller.printSettlementZTicket = (req, res) => {
+  try {
+    const { settlementData } = req.body;
+
+    const shiftcutData = settlementData[0];
+
+    const {
+      locationId,
+      locationName,
+      cashierId,
+      cashierName,
+      locationOwnerTradename,
+      locationOwnerName,
+      locationOwnerActivityCode,
+      locationOwnerActivityDescription,
+      locationOwnerNit,
+      locationOwnerNrc,
+      shiftcutDatetime,
+      shiftcutDate,
+      openedByFullname,
+      closedByFullname,
+      prevShiftcutNumber,
+      lastShiftcutNumber,
+      prevShiftcutId,
+      lastShiftcutId
+    } = shiftcutData[0];
+
+    const ticketsZData = settlementData[1];
+
+    const {
+      label: ticketLabel,
+      numberOfTransactions: ticketNumberOfTransactions,
+      initialDocNumber: ticketInitialDocNumber,
+      finalDocNumber: ticketFinalDocNumber,
+      taxableTotal: ticketTaxableTotal,
+      noTaxableTotal: ticketNoTaxableTotal,
+      noSubjectTotal: ticketNoSubjectTotal,
+      total: ticketTotal
+    } = ticketsZData[0];
+
+    const cfZData = settlementData[2];
+
+    const {
+      label: cfLabel,
+      numberOfTransactions: cfNumberOfTransactions,
+      initialDocNumber: cfInitialDocNumber,
+      finalDocNumber: cfFinalDocNumber,
+      taxableTotal: cfTaxableTotal,
+      noTaxableTotal: cfNoTaxableTotal,
+      noSubjectTotal: cfNoSubjectTotal,
+      total: cfTotal
+    } = cfZData[0];
+
+    const ccfZData = settlementData[3];
+
+    const {
+      label: ccfLabel,
+      numberOfTransactions: ccfNumberOfTransactions,
+      initialDocNumber: ccfInitialDocNumber,
+      finalDocNumber: ccfFinalDocNumber,
+      taxableTotal: ccfTaxableTotal,
+      noTaxableTotal: ccfNoTaxableTotal,
+      noSubjectTotal: ccfNoSubjectTotal,
+      total: ccfTotal
+    } = ccfZData[0];
+    
+    let encoder = new ReceiptPrinterEncoder({
+      language: 'esc-pos',
+      columns: 42,
+      feedBeforeCut: 0,
+      newline: '\n'
+    });
+
+    // let commands = encoder.initialize()
+    encoder.initialize()
+    // .raw([0x1B, 0x3D, 0x01])
+    .raw([0x1B, 0x63, 0x30, 0x03])
+    .line('')
+    .align('center')
+    .line(`${locationOwnerName}`)
+    .line(`${locationOwnerTradename}`)
+    .line(`${locationOwnerActivityDescription}`)
+    .line('')
+    .align('left')
+    .line(`${String('NIT:').padEnd(12)}${String(locationOwnerNit).padStart(26)}`)
+    .line(`${String('NRC:').padEnd(12)}${String(locationOwnerNrc).padStart(26)}`)
+    .line(`${String('Caja:').padEnd(12)}${String(cashierName).padStart(26)}`)
+    .line(`${String('Turno inicial:').padEnd(12)}${String(prevShiftcutNumber).padStart(26)}`)
+    .line(`${String('Turno final:').padEnd(12)}${String(lastShiftcutNumber).padStart(26)}`)
+    .line(`${String('Fecha:').padEnd(12)}${String(shiftcutDatetime).padStart(26)}`)
+    .align('center')
+    .line('TICKET Z')
+    .align('left')
+    .line('----------------------------------------')
+    .line(`${String(ticketLabel).padEnd(18)}${String('').padStart(20)}`)
+    .line(`${String('Venta Gravada:').padEnd(18)}${String(Number(ticketTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta Exenta:').padEnd(18)}${String(Number(ticketNoTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta No Sujeta:').padEnd(18)}${String(Number(ticketNoSubjectTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Total:').padEnd(18)}${String(Number(ticketTotal || 0).toFixed(2)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(cfLabel).padEnd(18)}${String('').padStart(20)}`)
+    .line(`${String('Venta Gravada:').padEnd(18)}${String(Number(cfTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta Exenta:').padEnd(18)}${String(Number(cfNoTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta No Sujeta:').padEnd(18)}${String(Number(cfNoSubjectTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Total:').padEnd(18)}${String(Number(cfTotal || 0).toFixed(2)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(ccfLabel).padEnd(18)}${String('').padStart(20)}`)
+    .line(`${String('Venta Gravada:').padEnd(18)}${String(Number(ccfTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta Exenta:').padEnd(18)}${String(Number(ccfNoTaxableTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Venta No Sujeta:').padEnd(18)}${String(Number(ccfNoSubjectTotal || 0).toFixed(2)).padStart(20)}`)
+    .line(`${String('Total:').padEnd(18)}${String(Number(ccfTotal || 0).toFixed(2)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String('TOTAL VENTAS:').padEnd(18)}${String(Number((+ticketTotal || 0) + (+cfTotal || 0) + (+ccfTotal || 0)).toFixed(2)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String('Transacciones:').padEnd(18)}${String(Number((ticketNumberOfTransactions || 0) + (cfNumberOfTransactions || 0) + (ccfNumberOfTransactions || 0)).toFixed(0)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(ticketLabel).padEnd(18)}${String(Number(ticketNumberOfTransactions).toFixed(0)).padStart(20)}`)
+    .line(`${String('Inicial').padEnd(18)}${String(Number(ticketInitialDocNumber).toFixed(0)).padStart(20)}`)
+    .line(`${String('Final').padEnd(18)}${String(Number(ticketFinalDocNumber).toFixed(0)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(cfLabel).padEnd(18)}${String(Number(cfNumberOfTransactions).toFixed(0)).padStart(20)}`)
+    .line(`${String('Inicial').padEnd(18)}${String(Number(cfInitialDocNumber).toFixed(0)).padStart(20)}`)
+    .line(`${String('Final').padEnd(18)}${String(Number(cfFinalDocNumber).toFixed(0)).padStart(20)}`)
+    .line('----------------------------------------')
+    .line(`${String(ccfLabel).padEnd(18)}${String(Number(ccfNumberOfTransactions).toFixed(0)).padStart(20)}`)
+    .line(`${String('Inicial').padEnd(18)}${String(Number(ccfInitialDocNumber).toFixed(0)).padStart(20)}`)
+    .line(`${String('Final').padEnd(18)}${String(Number(ccfFinalDocNumber).toFixed(0)).padStart(20)}`)
+    .line('')
+    .line('')
+    .line('')
+    .line('')
+    .line('')
+    .line('')
+    .raw(escposcommands.alternativeCut)
+    .line('')
+    .line('')
+    .line('');
+    // .encode();
+
+    let commands = encoder.encode();
+
+    const pcName = 'Luciernaga';
+    const printerName = 'Epson TM-U950 Receipt';
+
+    const printerPath = `\\\\${pcName}\\${printerName}`;
+
+    const tempFile = 'comandos_print.bin';
+    // const tempFile = 'temp_comandos.txt';
+    // const cutCommand = new Uint8Array([0x1B, 0x69]);
+    fs.writeFileSync(tempFile, Buffer.from(commands), 'binary');
+    // fs.writeFileSync(tempFile, `${commands}`, 'binary');
+
+    const command = `copy /b ${tempFile} "${printerPath}"`;
+
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.log(`Error al imprimir ${error.message}`);
+        return;
+      }
+      if (stderr) {
+        console.log(`Error ${stderr}`);
+        return;
+      }
+      console.log('Impresor completa');
+      return;
+    });
+
+    res.json({ data: "Printer connection success!" });
+  } catch(err) {
+    console.log(err);
+    res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
+  }
+}
+
 
 module.exports = { controller };
